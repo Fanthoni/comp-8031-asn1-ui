@@ -23,6 +23,7 @@ import {
 } from "react-native-gesture-handler";
 import { Link, useNavigation } from "expo-router";
 import { useGlobalState } from "../GlobalStateContext";
+import axios from "axios";
 
 export default function ClientsScreen() {
   const [sortOption, setSortOption] = useState("");
@@ -37,12 +38,13 @@ export default function ClientsScreen() {
   }));
 
   type Client = {
-    client_id: string;
+    client_id: number;
     first_name: string;
     last_name: string;
     address: string;
     photo_url: string;
     status: number;
+    client_status_id: number;
   };
 
   const [clients, setClients] = useState<Client[]>([]);
@@ -66,7 +68,6 @@ export default function ClientsScreen() {
   };
 
   useEffect(() => {
-    console.log("Customer Data", customerData);
     setClients([...customerData]);
   }, []);
 
@@ -117,6 +118,45 @@ export default function ClientsScreen() {
     }
   };
 
+  const updateClientStatus = async (
+    clientStatusId: number,
+    clientId: number,
+    newStatus: number
+  ) => {
+    try {
+      const response = await fetch(
+        `https://sheng.up.railway.app/api/client_statuses/${clientStatusId}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ client_id: clientId, status_id: newStatus }), // Request body with new status
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json(); // Get error details from response
+        throw new Error(errorData.message || "Failed to update client status");
+      }
+
+      const updatedClient = await response.json();
+      console.log("Client updated successfully:", updatedClient);
+
+      // Update state with new status
+      setClients((prevClients) =>
+        prevClients.map((client) =>
+          client.client_id === clientId
+            ? { ...client, status: newStatus }
+            : client
+        )
+      );
+    } catch (error: any) {
+      console.error("Error updating client:", error);
+      alert(`Error: ${error.message}`); // Show error message to the user
+    }
+  };
+
   return (
     <PaperProvider>
       <View style={styles.container}>
@@ -151,7 +191,7 @@ export default function ClientsScreen() {
         </View>
         <FlatList
           data={filteredClients}
-          keyExtractor={(item) => item.client_id}
+          keyExtractor={(item) => String(item.client_id)}
           renderItem={({ item }) => (
             <TouchableOpacity onPress={() => showDialog(item)}>
               <View style={styles.clientContainer}>
@@ -215,12 +255,17 @@ export default function ClientsScreen() {
                           {STATUS_OPTIONS.map((option: any) => (
                             <TouchableRipple
                               key={option.value}
-                              onPress={() =>
+                              onPress={() => {
                                 setSelectedClient({
                                   ...selectedClient,
                                   status: option.value,
-                                })
-                              }
+                                });
+                                updateClientStatus(
+                                  selectedClient.client_status_id,
+                                  selectedClient.client_id,
+                                  option.value
+                                );
+                              }}
                               style={[
                                 styles.statusButton,
                                 selectedClient.status === option.value &&
@@ -269,6 +314,9 @@ export default function ClientsScreen() {
 }
 
 const styles = StyleSheet.create({
+  logoutButton: {
+    backgroundColor: "#6200ea",
+  },
   nameRow: {
     flexDirection: "row",
     alignItems: "center",

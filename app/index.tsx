@@ -29,12 +29,12 @@ export default function LoginScreen() {
         (res) => res.data
       );
 
-      // console.log("Status Data:", statusesData.statuses);
-
       clientsData.clients.forEach((client: any) => {
-        client.status = clientStatusesData.client_statuses.filter(
+        const clientStatus = clientStatusesData.client_statuses.filter(
           (cs: any) => cs.client_id === client.client_id
-        )[0].status_id;
+        )[0];
+        client.status = clientStatus.status_id;
+        client.client_status_id = clientStatus.client_status_id;
       });
 
       setCustomerData(clientsData.clients);
