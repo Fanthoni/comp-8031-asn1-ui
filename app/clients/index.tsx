@@ -22,44 +22,52 @@ import {
   State,
 } from "react-native-gesture-handler";
 import { Link, useNavigation } from "expo-router";
-import clientsData from "../../assets/clients.json";
+import { useGlobalState } from "../GlobalStateContext";
 
 export default function ClientsScreen() {
   const [sortOption, setSortOption] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [visible, setVisible] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const { customerData, statuses } = useGlobalState();
 
-  const STATUS_OPTIONS = [
-    { label: "Completed", value: "completed" },
-    { label: "In Progress", value: "in_progress" },
-    { label: "Backlog", value: "backlog" },
-  ];
+  const STATUS_OPTIONS = statuses.map((status: any) => ({
+    label: status.status_name,
+    value: status.status_id,
+  }));
 
   type Client = {
-    id: string;
-    firstName: string;
-    lastName: string;
+    client_id: string;
+    first_name: string;
+    last_name: string;
     address: string;
-    profilePicture: string;
-    status: string;
+    photo_url: string;
+    status: number;
   };
 
   const [clients, setClients] = useState<Client[]>([]);
   const navigation = useNavigation();
 
   const sortClients = (option: string) => {
-    const sortedClients = [...clients].sort((a, b) =>
-      a[option as keyof (typeof clients)[0]].localeCompare(
-        b[option as keyof (typeof clients)[0]]
-      )
-    );
+    const sortedClients = [...clients].sort((a, b) => {
+      const aValue = a[option as keyof (typeof clients)[0]];
+      const bValue = b[option as keyof (typeof clients)[0]];
+
+      // Handle null values explicitly
+      if (aValue === null && bValue === null) return 0; // Both are null, keep original order
+      if (aValue === null) return 1; // Null should be considered the lower value
+      if (bValue === null) return -1;
+
+      return String(aValue).localeCompare(String(bValue));
+    });
+
     setClients(sortedClients);
     setSortOption(option);
   };
 
   useEffect(() => {
-    setClients([...clientsData]);
+    console.log("Customer Data", customerData);
+    setClients([...customerData]);
   }, []);
 
   useLayoutEffect(() => {
@@ -68,9 +76,13 @@ export default function ClientsScreen() {
 
   const filteredClients = clients.filter(
     (client) =>
-      client.firstName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      client.lastName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      client.address.toLowerCase().includes(searchQuery.toLowerCase())
+      (client.first_name?.toLowerCase() || "").includes(
+        searchQuery.toLowerCase()
+      ) ||
+      (client.last_name?.toLowerCase() || "").includes(
+        searchQuery.toLowerCase()
+      ) ||
+      (client.address?.toLowerCase() || "").includes(searchQuery.toLowerCase())
   );
 
   const showDialog = (client: Client) => {
@@ -82,7 +94,7 @@ export default function ClientsScreen() {
     if (nativeEvent.state === State.END) {
       const { translationX } = nativeEvent;
       const currentIndex = clients.findIndex(
-        (c) => c.id === selectedClient?.id
+        (c) => c.client_id === selectedClient?.client_id
       );
       if (translationX < -50 && currentIndex < clients.length - 1) {
         setSelectedClient(clients[currentIndex + 1]);
@@ -92,23 +104,22 @@ export default function ClientsScreen() {
     }
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: number) => {
     switch (status) {
-      case "completed":
+      case 1:
         return { backgroundColor: "green" }; // Green for completed
-      case "in_progress":
-        return { backgroundColor: "blue" }; // Blue for in-progress
-      case "backlog":
-        return { backgroundColor: "red" }; // Grey for backlog
+      case 2:
+        return { backgroundColor: "purple" }; // Blue for in-progress
+      case 3:
+        return { backgroundColor: "orange" }; // Grey for backlog
       default:
-        return { backgroundColor: "transparent" }; // Fallback
+        return { backgroundColor: "red" }; // Fallback
     }
   };
 
   return (
     <PaperProvider>
       <View style={styles.container}>
-        <Text style={styles.title}>Clients</Text>
         <TextInput
           style={styles.searchBox}
           placeholder="Search clients..."
@@ -118,16 +129,16 @@ export default function ClientsScreen() {
         />
         <View style={styles.chipContainer}>
           <Chip
-            selected={sortOption === "firstName"}
+            selected={sortOption === "first_name"}
             onPress={() => {
-              sortClients("firstName");
+              sortClients("first_name");
             }}
           >
             First Name
           </Chip>
           <Chip
-            selected={sortOption === "lastName"}
-            onPress={() => sortClients("lastName")}
+            selected={sortOption === "last_name"}
+            onPress={() => sortClients("last_name")}
           >
             Last Name
           </Chip>
@@ -140,18 +151,20 @@ export default function ClientsScreen() {
         </View>
         <FlatList
           data={filteredClients}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item) => item.client_id}
           renderItem={({ item }) => (
             <TouchableOpacity onPress={() => showDialog(item)}>
               <View style={styles.clientContainer}>
                 <Image
-                  source={{ uri: item.profilePicture }}
+                  source={{
+                    uri: "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png",
+                  }}
                   style={styles.profileImage}
                 />
                 <View style={styles.clientInfo}>
                   <View style={styles.nameRow}>
                     <Text style={styles.clientName}>
-                      {item.firstName} {item.lastName}
+                      {item.first_name} {item.last_name}
                     </Text>
                     <View
                       style={[
@@ -183,13 +196,15 @@ export default function ClientsScreen() {
                       <View style={styles.centeredContent}>
                         {/* Profile Image */}
                         <Image
-                          source={{ uri: selectedClient.profilePicture }}
+                          source={{
+                            uri: "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png",
+                          }}
                           style={styles.profileImageLarge}
                         />
 
                         {/* Name and Address */}
                         <Text style={styles.clientNameLarge}>
-                          {selectedClient.firstName} {selectedClient.lastName}
+                          {selectedClient.first_name} {selectedClient.last_name}
                         </Text>
                         <Text style={styles.clientAddressLarge}>
                           {selectedClient.address}
@@ -197,7 +212,7 @@ export default function ClientsScreen() {
 
                         {/* Status Selection */}
                         <View style={styles.statusContainer}>
-                          {STATUS_OPTIONS.map((option) => (
+                          {STATUS_OPTIONS.map((option: any) => (
                             <TouchableRipple
                               key={option.value}
                               onPress={() =>

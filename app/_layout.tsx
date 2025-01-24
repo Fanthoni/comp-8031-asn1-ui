@@ -1,5 +1,10 @@
 import { Stack } from "expo-router";
+import { GlobalStateProvider } from "./GlobalStateContext";
 
 export default function RootLayout() {
-  return <Stack screenOptions={{ headerShown: false }}></Stack>;
+  return (
+    <GlobalStateProvider>
+      <Stack screenOptions={{ headerShown: false }}></Stack>
+    </GlobalStateProvider>
+  );
 }
