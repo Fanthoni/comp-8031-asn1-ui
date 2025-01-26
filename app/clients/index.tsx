@@ -68,7 +68,7 @@ export default function ClientsScreen() {
   useEffect(() => {
     console.log("Customer Data", customerData);
     setClients([...customerData]);
-  }, []);
+  }, [customerData]);
 
   useLayoutEffect(() => {
     navigation.setOptions({ title: "Clients", headerLeft: () => null }); // Set the title to "Clients"

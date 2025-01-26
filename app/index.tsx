@@ -10,7 +10,12 @@ export default function LoginScreen() {
   const { control, handleSubmit } = useForm<{
     email: string;
     password: string;
-  }>();
+  }>({
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+  });
   const [loading, setLoading] = useState(false);
   const router = useRouter(); // Correct way to use navigation in expo-router
   const { setCustomerData, setStatuses } = useGlobalState();
@@ -25,11 +30,10 @@ export default function LoginScreen() {
         "https://sheng.up.railway.app/api/client_statuses",
       ];
       const responses = await Promise.all(apiUrls.map((url) => axios.get(url)));
+      console.log("Fetched Data:", responses);
       const [clientsData, statusesData, clientStatusesData] = responses.map(
         (res) => res.data
       );
-
-      // console.log("Status Data:", statusesData.statuses);
 
       clientsData.clients.forEach((client: any) => {
         client.status = clientStatusesData.client_statuses.filter(
