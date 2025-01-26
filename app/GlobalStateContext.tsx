@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState, ReactNode } from "react";
-import { Client } from "./types";
 
 interface GlobalStateContextType {
   customerData: any;
@@ -13,7 +12,7 @@ const GlobalStateContext = createContext<GlobalStateContextType | undefined>(
 );
 
 export const GlobalStateProvider = ({ children }: { children: ReactNode }) => {
-  const [customerData, setCustomerData] = useState<Client>([]);
+  const [customerData, setCustomerData] = useState<any>([]);
   const [statuses, setStatuses] = useState<any>([]);
 
   return (

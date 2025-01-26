@@ -21,7 +21,7 @@ import {
   PanGestureHandler,
   State,
 } from "react-native-gesture-handler";
-import { Link, useNavigation } from "expo-router";
+import { Link, useNavigation, useRouter } from "expo-router";
 import { useGlobalState } from "../GlobalStateContext";
 
 export default function ClientsScreen() {
@@ -47,6 +47,7 @@ export default function ClientsScreen() {
 
   const [clients, setClients] = useState<Client[]>([]);
   const navigation = useNavigation();
+  const router = useRouter();
 
   const sortClients = (option: string) => {
     const sortedClients = [...clients].sort((a, b) => {
@@ -175,6 +176,20 @@ export default function ClientsScreen() {
                   </View>
                   <Text style={styles.clientAddress}>{item.address}</Text>
                 </View>
+                <Button
+                  mode="contained"
+                  onPress={() =>
+                    router.push({
+                      pathname: "/clients/tasks",
+                      params: {
+                        clientId: item.client_id,
+                        clientName: `${item.first_name} ${item.last_name}`,
+                      },
+                    })
+                  }
+                >
+                  Tasks
+                </Button>
               </View>
             </TouchableOpacity>
           )}

@@ -1,10 +1,13 @@
 import { Stack } from "expo-router";
 import { GlobalStateProvider } from "./GlobalStateContext";
+import { Provider as PaperProvider } from "react-native-paper";
 
 export default function RootLayout() {
   return (
-    <GlobalStateProvider>
-      <Stack screenOptions={{ headerShown: false }}></Stack>
-    </GlobalStateProvider>
+    <PaperProvider>
+      <GlobalStateProvider>
+        <Stack screenOptions={{ headerShown: false }} />
+      </GlobalStateProvider>
+    </PaperProvider>
   );
 }
