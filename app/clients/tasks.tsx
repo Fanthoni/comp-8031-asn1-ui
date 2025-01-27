@@ -12,6 +12,7 @@ import {
 import { useLocalSearchParams } from "expo-router";
 import { Task, TASK_TYPES, DAYS } from "../types/task";
 import notifee, { TriggerType, RepeatFrequency } from "@notifee/react-native";
+import { useNavigation } from "@react-navigation/native";
 
 // Add the getNextDayTime function
 const getNextDayTime = (dayIndex: number, datetime: Date): number => {
@@ -25,7 +26,7 @@ const getNextDayTime = (dayIndex: number, datetime: Date): number => {
 export default function TasksScreen() {
   const params = useLocalSearchParams();
   const { clientId, clientName } = params;
-
+  const navigation = useNavigation();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isAddTaskVisible, setIsAddTaskVisible] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
@@ -181,15 +182,14 @@ export default function TasksScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.header}>Tasks for {clientName}</Text>
-
       <List.Section>
         {tasks.map((task) => (
           <List.Item
             key={task.id}
             title={task.type}
-            titleStyle={{ color: "#000" }} // Darker title font
+            titleStyle={{ color: "#000" }}
             description={task.datetime.toLocaleString()}
-            descriptionStyle={{ color: "#333" }} // Darker description font
+            descriptionStyle={{ color: "#333" }}
             right={() => (
               <Checkbox
                 status={task.enabled ? "checked" : "unchecked"}
@@ -321,5 +321,8 @@ const styles = StyleSheet.create({
     bottom: 20,
     right: 20,
     borderRadius: 30,
+  },
+  returnButton: {
+    marginBottom: 16,
   },
 });
