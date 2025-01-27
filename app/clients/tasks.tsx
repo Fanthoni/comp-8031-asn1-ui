@@ -50,7 +50,37 @@ export default function TasksScreen() {
     }
     setupNotifications();
   }, []);
+  useEffect(() => {
+    const fetchTasks = async () => {
+      try {
+        const response = await fetch(
+          `https://sheng.up.railway.app/api/reminders?client_id=${newTask.clientId}`
+        );
+        if (response.ok) {
+          const data = await response.json();
+          const mappedTasks: Task[] = data.reminders.map((reminder: any) => ({
+            id: reminder.reminder_id.toString(),
+            type: reminder.task_type,
+            datetime: new Date(reminder.reminder_datetime),
+            clientId: reminder.client_id.toString(),
+            clientName: "", // Populate if available
+            recurring: reminder.is_repetitive,
+            repeatPattern: reminder.repeat_pattern,
+            recurringDays: [], // Populate based on repeat_pattern if applicable
+            enabled: reminder.is_enabled,
+          }));
+          setTasks(mappedTasks);
+        } else {
+          const error = await response.json();
+          Alert.alert("Error", error.error || "Failed to fetch tasks.");
+        }
+      } catch (error) {
+        Alert.alert("Error", "An unexpected error occurred.");
+      }
+    };
 
+    fetchTasks();
+  }, [newTask.clientId]);
   const scheduleNotification = async (task: Task) => {
     if (task.recurring) {
       // Schedule recurring notifications
@@ -108,31 +138,44 @@ export default function TasksScreen() {
       return;
     }
 
-    // Check if the selected date and time is in the future
     if (datetime.getTime() <= Date.now()) {
       Alert.alert("Invalid Date/Time", "Please select a future date and time.");
       alert("Please select a future date and time.");
       return;
     }
 
-    const task: Task = {
-      id: Date.now().toString(),
-      ...(newTask as Task),
-      datetime,
+    const reminderData = {
+      client_id: newTask.clientId,
+      task_type: newTask.type,
+      reminder_datetime: datetimeString,
+      is_repetitive: newTask.recurring,
+      repeat_pattern: newTask.recurring ? newTask.repeatPattern : null,
+      is_enabled: true,
     };
 
-    await scheduleNotification(task);
-    setTasks([...tasks, task]);
-    setIsAddTaskVisible(false);
-    setNewTask({
-      clientId: clientId as string,
-      clientName: clientName as string,
-      recurring: false,
-      recurringDays: new Array(7).fill(false),
-      enabled: true,
-    });
-    setInputDate("");
-    setInputTime("");
+    try {
+      const response = await fetch(
+        "https://sheng.up.railway.app/api/reminders",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(reminderData),
+        }
+      );
+
+      if (response.ok) {
+        const result = await response.json();
+        Alert.alert("Success", "Task added to the database.");
+        // ...existing code to update state...
+      } else {
+        const error = await response.json();
+        Alert.alert("Error", error.error || "Failed to add task.");
+      }
+    } catch (error) {
+      Alert.alert("Error", "An unexpected error occurred.");
+    }
   };
 
   return (
@@ -144,7 +187,9 @@ export default function TasksScreen() {
           <List.Item
             key={task.id}
             title={task.type}
+            titleStyle={{ color: "#000" }} // Darker title font
             description={task.datetime.toLocaleString()}
+            descriptionStyle={{ color: "#333" }} // Darker description font
             right={() => (
               <Checkbox
                 status={task.enabled ? "checked" : "unchecked"}

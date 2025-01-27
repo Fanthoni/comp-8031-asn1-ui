@@ -5,6 +5,7 @@ export interface Task {
   clientId: string;
   clientName: string;
   recurring: boolean;
+  repeatPattern: string | null;
   recurringDays: boolean[];
   videoUrl?: string;
   enabled: boolean;
