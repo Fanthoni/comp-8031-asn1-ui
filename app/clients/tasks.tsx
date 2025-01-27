@@ -169,7 +169,6 @@ export default function TasksScreen() {
       if (response.ok) {
         const result = await response.json();
         Alert.alert("Success", "Task added to the database.");
-        // ...existing code to update state...
       } else {
         const error = await response.json();
         Alert.alert("Error", error.error || "Failed to add task.");
@@ -177,6 +176,7 @@ export default function TasksScreen() {
     } catch (error) {
       Alert.alert("Error", "An unexpected error occurred.");
     }
+    setIsAddTaskVisible(false);
   };
 
   return (
