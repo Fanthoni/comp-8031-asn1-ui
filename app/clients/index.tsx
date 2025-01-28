@@ -305,7 +305,7 @@ const styles = StyleSheet.create({
   },
   container: { flex: 1, padding: 20 },
   dialogContainer: {
-    backgroundColor: "lightpink",
+    backgroundColor: "white",
     borderRadius: 20, // Adds rounded corners for a modern look
     padding: 0,
     elevation: 10, // Adds a slight shadow for depth
