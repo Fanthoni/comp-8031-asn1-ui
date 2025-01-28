@@ -11,7 +11,7 @@ import {
 } from "react-native-paper";
 import { useLocalSearchParams } from "expo-router";
 import { Task, TASK_TYPES, DAYS } from "../types/task";
-import notifee, { TriggerType, RepeatFrequency } from "@notifee/react-native";
+// import notifee, { TriggerType, RepeatFrequency } from "@notifee/react-native";
 import { useNavigation } from "@react-navigation/native";
 
 // Add the getNextDayTime function
@@ -43,11 +43,11 @@ export default function TasksScreen() {
   // Notification setup
   useEffect(() => {
     async function setupNotifications() {
-      await notifee.requestPermission();
-      await notifee.createChannel({
-        id: "tasks",
-        name: "Task Reminders",
-      });
+      // await notifee.requestPermission();
+      // await notifee.createChannel({
+      //   id: "tasks",
+      //   name: "Task Reminders",
+      // });
     }
     setupNotifications();
   }, []);
@@ -87,33 +87,33 @@ export default function TasksScreen() {
       // Schedule recurring notifications
       task.recurringDays.forEach(async (enabled, dayIndex) => {
         if (enabled) {
-          await notifee.createTriggerNotification(
-            {
-              title: task.type,
-              body: `Reminder for ${task.clientName}`,
-              android: { channelId: "tasks" },
-            },
-            {
-              type: TriggerType.TIMESTAMP,
-              timestamp: getNextDayTime(dayIndex, task.datetime),
-              repeatFrequency: RepeatFrequency.WEEKLY,
-            }
-          );
+          // await notifee.createTriggerNotification(
+          //   {
+          //     title: task.type,
+          //     body: `Reminder for ${task.clientName}`,
+          //     android: { channelId: "tasks" },
+          //   },
+          //   {
+          //     type: TriggerType.TIMESTAMP,
+          //     timestamp: getNextDayTime(dayIndex, task.datetime),
+          //     repeatFrequency: RepeatFrequency.WEEKLY,
+          //   }
+          // );
         }
       });
     } else {
       // Schedule one-time notification
-      await notifee.createTriggerNotification(
-        {
-          title: task.type,
-          body: `Reminder for ${task.clientName}`,
-          android: { channelId: "tasks" },
-        },
-        {
-          type: TriggerType.TIMESTAMP,
-          timestamp: task.datetime.getTime(),
-        }
-      );
+      // await notifee.createTriggerNotification(
+      //   {
+      //     title: task.type,
+      //     body: `Reminder for ${task.clientName}`,
+      //     android: { channelId: "tasks" },
+      //   },
+      //   {
+      //     type: TriggerType.TIMESTAMP,
+      //     timestamp: task.datetime.getTime(),
+      //   }
+      // );
     }
   };
 
