@@ -325,6 +325,7 @@ const styles = StyleSheet.create({
   dialogContent: {
     alignItems: "center",
     padding: 5,
+    marginBottom: 20,
   },
   centeredContent: {
     height: 200,
