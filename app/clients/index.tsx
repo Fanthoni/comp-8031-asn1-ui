@@ -23,7 +23,8 @@ import {
 } from "react-native-gesture-handler";
 import { Link, useNavigation } from "expo-router";
 import { useGlobalState } from "../GlobalStateContext";
-import axios from "axios";
+import Icon from "react-native-vector-icons/MaterialIcons";
+import NewDialog from "./NewDialog";
 
 export default function ClientsScreen() {
   const [sortOption, setSortOption] = useState("");
@@ -49,6 +50,10 @@ export default function ClientsScreen() {
 
   const [clients, setClients] = useState<Client[]>([]);
   const navigation = useNavigation();
+
+  const [newDialogVisible, setNewDialogVisible] = useState(false);
+  const [clientName, setClientName] = useState("");
+  const [date, setDate] = useState<Date | null>(null);
 
   const sortClients = (option: string) => {
     const sortedClients = [...clients].sort((a, b) => {
@@ -89,6 +94,11 @@ export default function ClientsScreen() {
   const showDialog = (client: Client) => {
     setSelectedClient(client);
     setVisible(true);
+  };
+
+  const showNewDialog = (client: Client) => {
+    setClientName(`${client.first_name} ${client.last_name}`);
+    setNewDialogVisible(true);
   };
 
   const handleSwipe = ({ nativeEvent }: { nativeEvent: any }) => {
@@ -215,6 +225,12 @@ export default function ClientsScreen() {
                   </View>
                   <Text style={styles.clientAddress}>{item.address}</Text>
                 </View>
+                <TouchableOpacity
+                  onPress={() => showNewDialog(item)}
+                  style={styles.addTaskButton}
+                >
+                  <Icon name="notification-add" size={24} color="white" />
+                </TouchableOpacity>
               </View>
             </TouchableOpacity>
           )}
@@ -301,6 +317,14 @@ export default function ClientsScreen() {
               </PanGestureHandler>
             </GestureHandlerRootView>
           </Dialog>
+        </Portal>
+
+        <Portal>
+          <NewDialog
+            visible={newDialogVisible}
+            onDismiss={() => setNewDialogVisible(false)}
+            clientName={clientName}
+          />
         </Portal>
 
         <Link href="/" asChild>
@@ -469,5 +493,24 @@ const styles = StyleSheet.create({
   },
   radioButton: {
     transform: [{ scale: 0.8 }], // Shrinks radio button
+  },
+  addTaskButton: {
+    backgroundColor: "#6200ea",
+    padding: 10,
+    borderRadius: 30,
+    width: 60,
+    height: 60,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  dialogLabel: {
+    marginVertical: 8,
+    fontSize: 18,
+  },
+  dialogRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginVertical: 3,
   },
 });
