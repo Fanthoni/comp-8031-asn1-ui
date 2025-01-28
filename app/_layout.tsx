@@ -2,7 +2,7 @@ import { Stack } from "expo-router";
 import { GlobalStateProvider } from "./GlobalStateContext";
 import { Provider as PaperProvider } from "react-native-paper";
 
-export default function RootLayout() {
+export default function App() {
   return (
     <PaperProvider>
       <GlobalStateProvider>

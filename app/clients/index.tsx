@@ -29,7 +29,7 @@ export default function ClientsScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [visible, setVisible] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
-  const { customerData, statuses } = useGlobalState();
+  const { customerData, statuses, setCustomerData, setStatuses } = useGlobalState();
 
   const STATUS_OPTIONS = statuses.map((status: any) => ({
     label: status.status_name,
@@ -116,6 +116,15 @@ export default function ClientsScreen() {
       default:
         return { backgroundColor: "red" }; // Fallback
     }
+  };
+
+  const handleLogout = () => {
+    // Clear any stored data
+    setCustomerData([]);
+    setStatuses([]);
+    
+    // Navigate back to the login screen
+    navigation.navigate('Login');
   };
 
   return (
@@ -274,7 +283,7 @@ export default function ClientsScreen() {
         </Portal>
 
         <Link href="/" asChild>
-          <Button mode="contained" style={styles.button}>
+          <Button mode="contained" style={styles.button} onPress={handleLogout}>
             Logout
           </Button>
         </Link>
@@ -393,7 +402,7 @@ const styles = StyleSheet.create({
   },
   button: {
     marginTop: 0,
-    backgroundColor: "#6200ea",
+    backgroundColor: "red",
     borderRadius: 20,
     paddingHorizontal: 5,
   },

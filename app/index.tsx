@@ -1,26 +1,28 @@
 import React, { useState } from "react";
-import { View, StyleSheet } from "react-native";
-import { TextInput, Button, Text } from "react-native-paper";
+import { View, StyleSheet, Text } from "react-native";
+import { TextInput, Button } from "react-native-paper";
 import { useForm, Controller } from "react-hook-form";
-import { useRouter } from "expo-router";
 import axios from "axios";
-import { useGlobalState } from "./GlobalStateContext";
+import { useGlobalState, GlobalStateProvider } from "./GlobalStateContext";
+import LoginScreens from "./LoginScreen";
+import SignUpScreens from "./SignUpScreen";
+import { createStackNavigator as createNativeStackNavigator } from '@react-navigation/stack';
+import ClientsScreen from "./clients/index";
+const createStackNavigator = createNativeStackNavigator;
 
-export default function LoginScreen() {
-  const { control, handleSubmit } = useForm<{
-    email: string;
-    password: string;
-  }>({
+const Stack = createStackNavigator();
+
+function LoginScreen({ navigation }: { navigation: any }) {
+  const { control, handleSubmit } = useForm({
     defaultValues: {
-      email: "",
-      password: "",
-    },
+      email: '',
+      password: ''
+    }
   });
   const [loading, setLoading] = useState(false);
-  const router = useRouter(); // Correct way to use navigation in expo-router
   const { setCustomerData, setStatuses } = useGlobalState();
 
-  const onLogin = async (data: { email: string; password: string }) => {
+  const onLogin = async (data) => {
     setLoading(true);
 
     try {
@@ -45,21 +47,15 @@ export default function LoginScreen() {
       setStatuses(statusesData.statuses);
 
       alert(`Logged in with ${data.email}`);
-      router.push("/clients");
+      navigation.navigate("Clients");
     } catch (error) {
-      console.error("Error fetching data:", error);
-      alert("Failed to fetch data. Please try again.");
-    } finally {
-      setLoading(false);
+      console.error(error);
     }
+    setLoading(false);
   };
 
   return (
     <View style={styles.container}>
-      <Text variant="headlineMedium" style={styles.title}>
-        Login
-      </Text>
-
       <Controller
         control={control}
         name="email"
@@ -73,7 +69,7 @@ export default function LoginScreen() {
               style={styles.input}
               keyboardType="email-address"
             />
-            {error && <Text style={styles.error}>{error.message}</Text>}
+            {error && <Text>{error.message}</Text>}
           </>
         )}
       />
@@ -91,7 +87,7 @@ export default function LoginScreen() {
               secureTextEntry
               style={styles.input}
             />
-            {error && <Text style={styles.error}>{error.message}</Text>}
+            {error && <Text>{error.message}</Text>}
           </>
         )}
       />
@@ -104,14 +100,118 @@ export default function LoginScreen() {
       >
         Login
       </Button>
+      <Button
+        mode="text"
+        onPress={() => navigation.navigate('SignUp')}
+        style={styles.link}
+      >
+        Sign Up
+      </Button>
     </View>
   );
 }
 
+function SignUpScreen({ navigation }: { navigation: any }) {
+  const { control, handleSubmit } = useForm();
+  const [loading, setLoading] = useState(false);
+
+  const onSignUp = async (data) => {
+    setLoading(true);
+    try {
+      await axios.post('https://sheng.up.railway.app/api/users', {
+        username: data.email,
+        password_hash: data.password,
+      });
+      navigation.navigate('Login');
+    } catch (error) {
+      console.error(error);
+    }
+    setLoading(false);
+  };
+
+  return (
+    <View style={styles.container}>
+      <Controller
+        control={control}
+        name="email"
+        rules={{ required: "Email is required" }}
+        render={({ field: { onChange, value }, fieldState: { error } }) => (
+          <>
+            <TextInput
+              label="Email"
+              value={value}
+              onChangeText={onChange}
+              style={styles.input}
+              keyboardType="email-address"
+            />
+            {error && <Text>{error.message}</Text>}
+          </>
+        )}
+      />
+
+      <Controller
+        control={control}
+        name="password"
+        rules={{ required: "Password is required" }}
+        render={({ field: { onChange, value }, fieldState: { error } }) => (
+          <>
+            <TextInput
+              label="Password"
+              value={value}
+              onChangeText={onChange}
+              secureTextEntry
+              style={styles.input}
+            />
+            {error && <Text>{error.message}</Text>}
+          </>
+        )}
+      />
+
+      <Button
+        mode="contained"
+        onPress={handleSubmit(onSignUp)}
+        loading={loading}
+        style={styles.button}
+      >
+        Sign Up
+      </Button>
+      <Button
+        mode="text"
+        onPress={() => navigation.navigate('Login')}
+        style={styles.link}
+      >
+        Login
+      </Button>
+    </View>
+  );
+}
+
+export default function App() {
+  return (
+    <GlobalStateProvider>
+        <Stack.Navigator initialRouteName="Login">
+          <Stack.Screen name="Login" component={LoginScreens} />
+          <Stack.Screen name="SignUp" component={SignUpScreens} />
+          <Stack.Screen name="Clients" component={ClientsScreen} />
+        </Stack.Navigator>
+    </GlobalStateProvider>
+  );
+}
+
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: "center", padding: 20 },
-  title: { textAlign: "center", marginBottom: 20 },
-  input: { marginBottom: 10 },
-  error: { color: "red", fontSize: 12, marginBottom: 10 },
-  button: { marginTop: 10 },
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    padding: 16,
+  },
+  input: {
+    marginBottom: 16,
+  },
+  button: {
+    marginTop: 16,
+  },
+  link: {
+    marginTop: 16,
+  },
 });
+
