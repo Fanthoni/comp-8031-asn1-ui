@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { View, StyleSheet, Text } from "react-native";
+import React, { useEffect, useState } from "react";
+import { View, StyleSheet, Text, Platform } from "react-native";
 import { TextInput, Button } from "react-native-paper";
 import { useForm, Controller } from "react-hook-form";
 import axios from "axios";
@@ -8,6 +8,8 @@ import LoginScreens from "./LoginScreen";
 import SignUpScreens from "./SignUpScreen";
 import { createStackNavigator as createNativeStackNavigator } from '@react-navigation/stack';
 import ClientsScreen from "./clients/index";
+import * as Notifications from 'expo-notifications';
+
 const createStackNavigator = createNativeStackNavigator;
 
 const Stack = createStackNavigator();
@@ -186,14 +188,41 @@ function SignUpScreen({ navigation }: { navigation: any }) {
   );
 }
 
+Notifications.setNotificationHandler({
+  handleNotification: async () => {
+    return {
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: true,
+    };
+  },
+});
+
+async function registerForPushNotificationsAsync() {
+  if (Platform.OS === 'android') {
+    Notifications.setNotificationChannelAsync('default', {
+      name: 'default',
+      importance: Notifications.AndroidImportance.MAX,
+      vibrationPattern: [0, 250, 250, 250],
+      lightColor: '#FF231F7C',
+    });
+  }
+}
+
+
 export default function App() {
+  useEffect(() => {
+    Notifications.requestPermissionsAsync();
+    registerForPushNotificationsAsync();
+  }, []);
+
   return (
     <GlobalStateProvider>
-        <Stack.Navigator initialRouteName="Login">
-          <Stack.Screen name="Login" component={LoginScreens} />
-          <Stack.Screen name="SignUp" component={SignUpScreens} />
-          <Stack.Screen name="Clients" component={ClientsScreen} />
-        </Stack.Navigator>
+      <Stack.Navigator initialRouteName="Login">
+        <Stack.Screen name="Login" component={LoginScreens} />
+        <Stack.Screen name="SignUp" component={SignUpScreens} />
+        <Stack.Screen name="Clients" component={ClientsScreen} />
+      </Stack.Navigator>
     </GlobalStateProvider>
   );
 }

@@ -10,9 +10,11 @@ import {
   TextInput,
 } from "react-native-paper";
 import { useLocalSearchParams } from "expo-router";
-import { Task, TASK_TYPES, DAYS } from "../types/task";
+import Task, { TASK_TYPES, DAYS } from "../types/task";
 // import notifee, { TriggerType, RepeatFrequency } from "@notifee/react-native";
 import { useNavigation } from "@react-navigation/native";
+import * as Notifications from 'expo-notifications';
+import DateTimePicker from 'react-native-ui-datepicker';
 
 // Add the getNextDayTime function
 const getNextDayTime = (dayIndex: number, datetime: Date): number => {
@@ -37,8 +39,10 @@ export default function TasksScreen() {
     recurringDays: new Array(7).fill(false),
     enabled: true,
   });
-  const [inputDate, setInputDate] = useState<string>(""); // New state for date
-  const [inputTime, setInputTime] = useState<string>(""); // New state for time
+  const [inputDate, setInputDate] = useState<string>("");
+  const [date, setDate] = useState(new Date());
+  const [inputTime, setInputTime] = useState<string>("");
+  // const [date, setDate] = useState(new Date()); // New state for date picker
 
   // Notification setup
   useEffect(() => {
@@ -83,6 +87,7 @@ export default function TasksScreen() {
     fetchTasks();
   }, [newTask.clientId]);
   const scheduleNotification = async (task: Task) => {
+    Alert.alert("Task Scheduled", task.enabled ? "Task is now scheduled." : "Task is now unscheduled.");
     if (task.recurring) {
       // Schedule recurring notifications
       task.recurringDays.forEach(async (enabled, dayIndex) => {
@@ -99,6 +104,19 @@ export default function TasksScreen() {
           //     repeatFrequency: RepeatFrequency.WEEKLY,
           //   }
           // );
+          Notifications.scheduleNotificationAsync({
+            content: {
+              title: task.type,
+              body: `Reminder for ${task.clientName}`,
+            },
+            trigger: {
+              repeats: true,
+              weekday: dayIndex,
+              hour: task.datetime.getHours(),
+              minute: task.datetime.getMinutes(),
+              channelId: "tasks",
+            },
+          });
         }
       });
     } else {
@@ -114,6 +132,17 @@ export default function TasksScreen() {
       //     timestamp: task.datetime.getTime(),
       //   }
       // );
+      Notifications.scheduleNotificationAsync({
+        content: {
+          title: task.type,
+          body: `Reminder for ${task.clientName}`,
+        },
+        trigger: {
+          hour: task.datetime.getHours(),
+          minute: task.datetime.getMinutes(),
+          channelId: "tasks",
+        },
+      });
     }
   };
 
@@ -124,13 +153,13 @@ export default function TasksScreen() {
       return;
     }
 
-    if (!inputDate || !inputTime) {
+    if (!date) {
       Alert.alert("Validation Error", "Both date and time are required.");
       alert("Both date and time are required.");
       return;
     }
 
-    const datetimeString = `${inputDate} ${inputTime}`;
+    const datetimeString = date.toISOString();
     const datetime = new Date(datetimeString);
 
     if (isNaN(datetime.getTime())) {
@@ -223,15 +252,36 @@ export default function TasksScreen() {
           <Dialog.Title>New Task</Dialog.Title>
           <Dialog.Content>
             {/* Manual Date Entry */}
-            <TextInput
+            {/* <TextInput
               label="Enter Date (YYYY-MM-DD)"
               value={inputDate}
               onChangeText={setInputDate}
               style={styles.input}
               placeholder="e.g., 2025-01-24"
-            />
+            /> */}
 
             {/* Manual Time Entry */}
+            {/* <TextInput
+              label="Enter Time (HH:MM)"
+              value={inputTime}
+              onChangeText={setInputTime}
+              style={styles.input}
+              placeholder="e.g., 10:30"
+            /> */}
+            {(!newTask.recurring)
+              ?
+              <View style={{ display: 'flex', backgroundColor: '#F5FCFF', borderRadius: 10, padding: 10 }}
+                v-if={false}
+              >
+                <DateTimePicker
+                  mode="single"
+                  date={date}
+                  onChange={(params) => {
+                    console.log(params.date);
+                    setDate(params.date);
+                  }}
+                /></View> : <View></View>}
+            <View style={{ marginTop: 10 }}></View>
             <TextInput
               label="Enter Time (HH:MM)"
               value={inputTime}
@@ -239,7 +289,6 @@ export default function TasksScreen() {
               style={styles.input}
               placeholder="e.g., 10:30"
             />
-
             {TASK_TYPES.map((type) => (
               <Button
                 key={type}

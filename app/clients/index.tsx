@@ -102,7 +102,7 @@ export default function ClientsScreen() {
       } else if (translationX > 50 && currentIndex > 0) {
         setSelectedClient(clients[currentIndex - 1]);
       }
-    }
+    } 
   };
 
   const getStatusColor = (status: number) => {
@@ -305,7 +305,7 @@ const styles = StyleSheet.create({
   },
   container: { flex: 1, padding: 20 },
   dialogContainer: {
-    backgroundColor: "white",
+    backgroundColor: "lightpink",
     borderRadius: 20, // Adds rounded corners for a modern look
     padding: 0,
     elevation: 10, // Adds a slight shadow for depth
@@ -325,7 +325,6 @@ const styles = StyleSheet.create({
   dialogContent: {
     alignItems: "center",
     padding: 5,
-    marginBottom: 20,
   },
   centeredContent: {
     height: 200,
@@ -403,7 +402,7 @@ const styles = StyleSheet.create({
   },
   button: {
     marginTop: 0,
-    backgroundColor: "red",
+    backgroundColor: "white",
     borderRadius: 20,
     paddingHorizontal: 5,
   },
