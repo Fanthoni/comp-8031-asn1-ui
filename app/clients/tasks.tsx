@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, StyleSheet, Alert } from "react-native";
+import { View, StyleSheet, Alert, ScrollView } from "react-native";
 import {
   Button,
   Text,
@@ -39,53 +39,56 @@ export default function TasksScreen() {
     recurringDays: new Array(7).fill(false),
     enabled: true,
   });
-  const [inputDate, setInputDate] = useState<string>("");
   const [date, setDate] = useState(new Date());
   const [inputTime, setInputTime] = useState<string>("");
+  const [inputTimeHrs, setInputTimeHrs] = useState<string>("");
+  const [inputTimeMins, setInputTimeMins] = useState<string>("");
   // const [date, setDate] = useState(new Date()); // New state for date picker
 
   // Notification setup
   useEffect(() => {
-    async function setupNotifications() {
-      // await notifee.requestPermission();
-      // await notifee.createChannel({
-      //   id: "tasks",
-      //   name: "Task Reminders",
-      // });
-    }
-    setupNotifications();
+    // async function setupNotifications() {
+    //   // await notifee.requestPermission();
+    //   // await notifee.createChannel({
+    //   //   id: "tasks",
+    //   //   name: "Task Reminders",
+    //   // });
+    // }
+    // setupNotifications();
   }, []);
   useEffect(() => {
-    const fetchTasks = async () => {
-      try {
-        const response = await fetch(
-          `https://sheng.up.railway.app/api/reminders?client_id=${newTask.clientId}`
-        );
-        if (response.ok) {
-          const data = await response.json();
-          const mappedTasks: Task[] = data.reminders.map((reminder: any) => ({
-            id: reminder.reminder_id.toString(),
-            type: reminder.task_type,
-            datetime: new Date(reminder.reminder_datetime),
-            clientId: reminder.client_id.toString(),
-            clientName: "", // Populate if available
-            recurring: reminder.is_repetitive,
-            repeatPattern: reminder.repeat_pattern,
-            recurringDays: [], // Populate based on repeat_pattern if applicable
-            enabled: reminder.is_enabled,
-          }));
-          setTasks(mappedTasks);
-        } else {
-          const error = await response.json();
-          Alert.alert("Error", error.error || "Failed to fetch tasks.");
-        }
-      } catch (error) {
-        Alert.alert("Error", "An unexpected error occurred.");
-      }
-    };
-
     fetchTasks();
   }, [newTask.clientId]);
+
+  const fetchTasks = async () => {
+    try {
+      const response = await fetch(
+        `https://sheng.up.railway.app/api/reminders?client_id=${newTask.clientId}`
+      );
+      if (response.ok) {
+        const data = await response.json();
+        const mappedTasks: Task[] = data.reminders.map((reminder: any) => ({
+          id: reminder.reminder_id.toString(),
+          type: reminder.task_type,
+          datetime: new Date(reminder.reminder_datetime).toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }),
+          clientId: reminder.client_id.toString(),
+          clientName: "", // Populate if available
+          recurring: reminder.is_repetitive,
+          repeatPattern: reminder.repeat_pattern,
+          recurringDays: [], // Populate based on repeat_pattern if applicable
+          enabled: reminder.is_enabled,
+        }));
+        console.log(mappedTasks);
+        setTasks(mappedTasks);
+      } else {
+        const error = await response.json();
+        Alert.alert("Error", error.error || "Failed to fetch tasks.");
+      }
+    } catch (error) {
+      Alert.alert("Error", "An unexpected error occurred.");
+    }
+  };
+
   const scheduleNotification = async (task: Task) => {
     Alert.alert("Task Scheduled", task.enabled ? "Task is now scheduled." : "Task is now unscheduled.");
     if (task.recurring) {
@@ -135,11 +138,12 @@ export default function TasksScreen() {
       Notifications.scheduleNotificationAsync({
         content: {
           title: task.type,
-          body: `Reminder for ${task.clientName}`,
+          body: `Reminder for ${task.clientName} at ${task.datetime.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' })}`,
+          sound: true,
+          sticky: true,
         },
         trigger: {
-          hour: task.datetime.getHours(),
-          minute: task.datetime.getMinutes(),
+          date: task.datetime,
           channelId: "tasks",
         },
       });
@@ -152,37 +156,46 @@ export default function TasksScreen() {
       alert("Task type is required.");
       return;
     }
-
-    if (!date) {
-      Alert.alert("Validation Error", "Both date and time are required.");
-      alert("Both date and time are required.");
+    if (!newTask.recurring) {
+      if (!date) {
+        Alert.alert("Validation Error", "Both date and time are required.");
+        alert("Both date and time are required.");
+        return;
+      }
+    }
+    if (!inputTimeHrs || !inputTimeMins) {
+      Alert.alert("Validation Error", "Time is required.");
       return;
     }
 
-    const datetimeString = date.toISOString();
-    const datetime = new Date(datetimeString);
-
+    // set timezone from PST to UTC
+    let datetime = date;
+    // we are in PST timezone
+    datetime.setHours(parseInt(inputTimeHrs));
+    datetime.setMinutes(parseInt(inputTimeMins));
+    datetime.setSeconds(0);
+    console.log(datetime);
+    let dateTimeString = datetime.toISOString();
+    // convert to year-month-day hour:minute:second
+    dateTimeString = dateTimeString.slice(0, 19).replace("T", " ");
     if (isNaN(datetime.getTime())) {
       Alert.alert("Invalid Date/Time", "Please enter a valid date and time.");
       alert("Please enter a valid date and time.");
       return;
     }
-
-    if (datetime.getTime() <= Date.now()) {
-      Alert.alert("Invalid Date/Time", "Please select a future date and time.");
-      alert("Please select a future date and time.");
-      return;
-    }
-
+    // if (datetime.getTime() <= Date.now()) {
+    //   Alert.alert("Invalid Date/Time", "Please select a future date and time.");
+    //   alert("Please select a future date and time.");
+    //   return;
+    // }
     const reminderData = {
       client_id: newTask.clientId,
       task_type: newTask.type,
-      reminder_datetime: datetimeString,
+      reminder_datetime: dateTimeString,
       is_repetitive: newTask.recurring,
       repeat_pattern: newTask.recurring ? newTask.repeatPattern : null,
       is_enabled: true,
     };
-
     try {
       const response = await fetch(
         "https://sheng.up.railway.app/api/reminders",
@@ -194,10 +207,20 @@ export default function TasksScreen() {
           body: JSON.stringify(reminderData),
         }
       );
-
       if (response.ok) {
         const result = await response.json();
         Alert.alert("Success", "Task added to the database.");
+        scheduleNotification({
+          id: result.reminder_id.toString(),
+          type: newTask.type,
+          datetime: datetime,
+          clientId: newTask.clientId as string,
+          clientName: newTask.clientName as string,
+          recurring: newTask.recurring as boolean,
+          repeatPattern: newTask.recurring ? newTask.repeatPattern : null,
+          recurringDays: newTask.recurringDays as boolean[],
+          enabled: true,
+        } as Task);
       } else {
         const error = await response.json();
         Alert.alert("Error", error.error || "Failed to add task.");
@@ -206,35 +229,104 @@ export default function TasksScreen() {
       Alert.alert("Error", "An unexpected error occurred.");
     }
     setIsAddTaskVisible(false);
+    fetchTasks();
+  };
+
+  const showTaskDialog = () => {
+    Alert.alert(
+      "Task Options",
+      "What would you like to do with this task?",
+      [
+        {
+          text: "Delete",
+          onPress: async () => {
+            try {
+              const response = await fetch(
+                `https://sheng.up.railway.app/api/reminders/${selectedTask?.id}`,
+                {
+                  method: "DELETE",
+                }
+              );
+              if (response.ok) {
+                Alert.alert("Success", "Task deleted.");
+                // wait 2 seconds for the notification to be removed
+                setTimeout(() => {
+                  fetchTasks();
+                }, 400);
+              } else {
+                const error = await response.json();
+                // Alert.alert("Error", error.error || "Failed to delete task.");
+              }
+            } catch (error) {
+              Alert.alert("Error", "An unexpected error occurred.");
+            }
+          },
+        },
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+      ]
+    );
   };
 
   return (
     <View style={styles.container}>
       <Text style={styles.header}>Tasks for {clientName}</Text>
-      <List.Section>
-        {tasks.map((task) => (
-          <List.Item
-            key={task.id}
-            title={task.type}
-            titleStyle={{ color: "#000" }}
-            description={task.datetime.toLocaleString()}
-            descriptionStyle={{ color: "#333" }}
-            right={() => (
-              <Checkbox
-                status={task.enabled ? "checked" : "unchecked"}
-                onPress={() => {
-                  const updatedTasks = tasks.map((t) =>
-                    t.id === task.id ? { ...t, enabled: !t.enabled } : t
-                  );
-                  setTasks(updatedTasks);
-                }}
-              />
-            )}
-            onPress={() => setSelectedTask(task)}
-          />
-        ))}
-      </List.Section>
+      <ScrollView>
+        <List.Section >
+          {tasks.map((task) => (
+            <List.Item
+              key={task.id}
+              title={task.type}
+              titleStyle={{ color: "#000" }}
+              description={task.datetime.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' })}
+              descriptionStyle={{ color: "#333" }}
+              right={() => (<View style={{ width: 'auto', display: 'flex', flexDirection: 'row' }}>
+                <Checkbox
+                  status={task.enabled ? "checked" : "unchecked"}
+                  onPress={() => {
+                    const updatedTasks = tasks.map((t) =>
+                      t.id === task.id ? { ...t, enabled: !t.enabled } : t
+                    );
+                    // update the task in the database
+                    fetch(`https://sheng.up.railway.app/api/reminders/${task.id}`, {
+                      method: "PUT",
+                      headers: {
+                        "Content-Type": "application/json",
+                      },
+                      body: JSON.stringify({
+                        is_enabled: !task.enabled,
+                      }),
+                    }).then(() => {
+                      setTasks(updatedTasks);
+                      Alert.alert("Task Updated", !task.enabled ? "Task is now scheduled." : "Task is now unscheduled.");
+                      if (!task.enabled) {
+                        scheduleNotification(task);
+                      }
+                    });
+                  }}
+                /><Button
+                  style={{ backgroundColor: 'red', borderRadius: 5, padding: 0, marginHorizontal: 5 }}
+                  onPress={() => {
+                    setSelectedTask(task);
+                    showTaskDialog();
+                  }}
+                >
+                  <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 15 }}>Delete</Text>
+                </Button>
+              </View>
+              )}
 
+              onPress={async () => {
+                setSelectedTask(task);
+                showTaskDialog();
+              }}
+            />
+          ))}
+        </List.Section>
+      </ScrollView>
+      <View style={{ marginBottom: 40 }}></View>
       <Button
         mode="contained"
         onPress={() => setIsAddTaskVisible(true)}
@@ -282,13 +374,23 @@ export default function TasksScreen() {
                   }}
                 /></View> : <View></View>}
             <View style={{ marginTop: 10 }}></View>
-            <TextInput
-              label="Enter Time (HH:MM)"
-              value={inputTime}
-              onChangeText={setInputTime}
-              style={styles.input}
-              placeholder="e.g., 10:30"
-            />
+            <View style={{ display: 'flex', flexDirection: 'row', justifyContent: 'center' }}>
+              <TextInput
+                label="HH"
+                value={inputTimeHrs}
+                onChangeText={setInputTimeHrs}
+                style={styles.input}
+                placeholder=""
+              /><Text style={{ marginTop: 0, fontSize: 40, marginHorizontal: 5 }}
+              >:</Text>
+              <TextInput
+                label="MM"
+                value={inputTimeMins}
+                onChangeText={setInputTimeMins}
+                style={styles.input}
+                placeholder=""
+              />
+            </View>
             {TASK_TYPES.map((type) => (
               <Button
                 key={type}
@@ -339,6 +441,7 @@ export default function TasksScreen() {
           </Dialog.Actions>
         </Dialog>
       </Portal>
+
     </View>
   );
 }
@@ -347,6 +450,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
+    overflow: 'scroll',
   },
   header: {
     fontSize: 24,
