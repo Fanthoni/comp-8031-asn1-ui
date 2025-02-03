@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { View, StyleSheet, Text, Platform } from "react-native";
 import { TextInput, Button } from "react-native-paper";
 import { useForm, Controller } from "react-hook-form";
@@ -9,6 +9,8 @@ import SignUpScreens from "./SignUpScreen";
 import { createStackNavigator as createNativeStackNavigator } from '@react-navigation/stack';
 import ClientsScreen from "./clients/index";
 import * as Notifications from 'expo-notifications';
+import TaskDetailsScreen from "./clients/taskDetails";
+import { router } from "expo-router";
 
 const createStackNavigator = createNativeStackNavigator;
 
@@ -193,36 +195,50 @@ Notifications.setNotificationHandler({
     return {
       shouldShowAlert: true,
       shouldPlaySound: true,
-      shouldSetBadge: true,
+      shouldSetBadge: false,
     };
   },
 });
 
 async function registerForPushNotificationsAsync() {
   if (Platform.OS === 'android') {
-    Notifications.setNotificationChannelAsync('default', {
-      name: 'default',
+    Notifications.setNotificationChannelAsync('tasks', {
+      name: 'tasks',
       importance: Notifications.AndroidImportance.MAX,
       vibrationPattern: [0, 250, 250, 250],
       lightColor: '#FF231F7C',
+
     });
   }
 }
 
 
 export default function App() {
+  const navigationRef = useRef(null);
+
   useEffect(() => {
-    Notifications.requestPermissionsAsync();
-    registerForPushNotificationsAsync();
+    const fetchData = async () => {
+      await Notifications.requestPermissionsAsync();
+      await registerForPushNotificationsAsync();
+      const subscription = Notifications.addNotificationResponseReceivedListener(response => {
+        const data = response.notification.request.content.data;
+        if (data.taskId) {
+          router.push(`/clients/taskDetails?taskId=${data.taskId}`);
+        }
+      });
+      return () => subscription.remove();
+    };
+    fetchData();
   }, []);
 
   return (
     <GlobalStateProvider>
-      <Stack.Navigator initialRouteName="Login">
-        <Stack.Screen name="Login" component={LoginScreens} />
-        <Stack.Screen name="SignUp" component={SignUpScreens} />
-        <Stack.Screen name="Clients" component={ClientsScreen} />
-      </Stack.Navigator>
+        <Stack.Navigator initialRouteName="Login">
+          <Stack.Screen name="TaskDetails" component={TaskDetailsScreen} />
+          <Stack.Screen name="Login" component={LoginScreens} />
+          <Stack.Screen name="SignUp" component={SignUpScreens} />
+          <Stack.Screen name="Clients" component={ClientsScreen} />
+        </Stack.Navigator>
     </GlobalStateProvider>
   );
 }

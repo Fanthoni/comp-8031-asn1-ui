@@ -6,7 +6,11 @@ export default function App() {
   return (
     <PaperProvider>
       <GlobalStateProvider>
-        <Stack screenOptions={{ headerShown: false }} />
+        <Stack screenOptions={{ headerShown: false }}>
+          {/* <Stack.Screen name="index" />
+          <Stack.Screen name="LoginScreen" />
+          <Stack.Screen name="SignUpScreen" /> */}
+        </Stack>
       </GlobalStateProvider>
     </PaperProvider>
   );

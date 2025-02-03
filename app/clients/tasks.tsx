@@ -12,7 +12,7 @@ import {
 import { useLocalSearchParams } from "expo-router";
 import Task, { TASK_TYPES, DAYS } from "../types/task";
 // import notifee, { TriggerType, RepeatFrequency } from "@notifee/react-native";
-import { useNavigation } from "@react-navigation/native";
+import { Link, useNavigation, useRouter } from "expo-router";
 import * as Notifications from 'expo-notifications';
 import DateTimePicker from 'react-native-ui-datepicker';
 
@@ -29,9 +29,10 @@ export default function TasksScreen() {
   const params = useLocalSearchParams();
   const { clientId, clientName } = params;
   const navigation = useNavigation();
+  const router = useRouter();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isAddTaskVisible, setIsAddTaskVisible] = useState(false);
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [selectedTask, setSelectedTask] = useState<any>(null);
   const [newTask, setNewTask] = useState<Partial<Task>>({
     clientId: clientId as string,
     clientName: clientName as string,
@@ -111,6 +112,7 @@ export default function TasksScreen() {
             content: {
               title: task.type,
               body: `Reminder for ${task.clientName}`,
+              data: { taskId: task.id },
             },
             trigger: {
               repeats: true,
@@ -141,6 +143,7 @@ export default function TasksScreen() {
           body: `Reminder for ${task.clientName} at ${task.datetime.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' })}`,
           sound: true,
           sticky: true,
+          data: { taskId: task.id },
         },
         trigger: {
           date: task.datetime,
@@ -234,37 +237,37 @@ export default function TasksScreen() {
 
   const showTaskDialog = () => {
     Alert.alert(
-      "Task Options",
-      "What would you like to do with this task?",
+      "Check Task Details",
+      `Type: ${selectedTask?.type}\nDate: ${selectedTask?.datetime}`,
       [
         {
-          text: "Delete",
+          text: "Send Notification",
           onPress: async () => {
-            try {
-              const response = await fetch(
-                `https://sheng.up.railway.app/api/reminders/${selectedTask?.id}`,
-                {
-                  method: "DELETE",
-                }
-              );
-              if (response.ok) {
-                Alert.alert("Success", "Task deleted.");
-                // wait 2 seconds for the notification to be removed
-                setTimeout(() => {
-                  fetchTasks();
-                }, 400);
-              } else {
-                const error = await response.json();
-                // Alert.alert("Error", error.error || "Failed to delete task.");
-              }
-            } catch (error) {
-              Alert.alert("Error", "An unexpected error occurred.");
-            }
+            // make sure click the notification will route to the task details
+            Notifications.scheduleNotificationAsync({
+              content: {
+                title: selectedTask?.type,
+                body: `Reminder for ${selectedTask?.clientName} at ${selectedTask?.datetime}`,
+                data: { taskId: selectedTask.id },
+              },
+              trigger: {
+                date: selectedTask?.datetime,
+                channelId: "tasks",
+              },
+            });
           },
         },
         {
           text: "Cancel",
+          onPress: () => { },
           style: "cancel",
+        },
+        {
+          text: "Open Task Details",
+          onPress: async () => {
+
+            router.push(`/clients/taskDetails?taskId=${selectedTask.id}`);
+          }
         },
       ]
     );

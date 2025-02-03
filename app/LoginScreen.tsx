@@ -33,13 +33,12 @@ function LoginScreen({ navigation }) {
 
       setCustomerData(clientsData.clients);
       setStatuses(statusesData.statuses);
-
       alert(`Logged in with ${data.email}`);
+      setLoading(false);
       navigation.navigate("Clients");
     } catch (error) {
       console.error(error);
     }
-    setLoading(false);
   };
 
   return (
@@ -86,7 +85,7 @@ function LoginScreen({ navigation }) {
         loading={loading}
         style={styles.button}
       >
-        Login
+        Login...
       </Button>
       <Button
         mode="text"
