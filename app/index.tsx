@@ -10,7 +10,7 @@ import { createStackNavigator as createNativeStackNavigator } from '@react-navig
 import ClientsScreen from "./clients/index";
 import * as Notifications from 'expo-notifications';
 import TaskDetailsScreen from "./clients/taskDetails";
-import { router } from "expo-router";
+import { Link, router } from "expo-router";
 
 const createStackNavigator = createNativeStackNavigator;
 
@@ -217,24 +217,23 @@ export default function App() {
   const navigationRef = useRef(null);
 
   useEffect(() => {
-    const fetchData = async () => {
-      await Notifications.requestPermissionsAsync();
-      await registerForPushNotificationsAsync();
-      const subscription = Notifications.addNotificationResponseReceivedListener(response => {
-        const data = response.notification.request.content.data;
-        if (data.taskId) {
-          router.push(`/clients/taskDetails?taskId=${data.taskId}`);
-        }
-      });
-      return () => subscription.remove();
-    };
-    fetchData();
+    // const fetchData = async () => {
+    //   await Notifications.requestPermissionsAsync();
+    //   await registerForPushNotificationsAsync();
+    //   const subscription = Notifications.addNotificationResponseReceivedListener(response => {
+    //     const data = response.notification.request.content.data;
+    //     if (data.taskId) {
+    //       router.push(`/clients/taskDetails?taskId=${data.taskId}`);
+    //     }
+    //   });
+    //   return () => subscription.remove();
+    // };
+    // fetchData();
   }, []);
 
   return (
     <GlobalStateProvider>
         <Stack.Navigator initialRouteName="Login">
-          <Stack.Screen name="TaskDetails" component={TaskDetailsScreen} />
           <Stack.Screen name="Login" component={LoginScreens} />
           <Stack.Screen name="SignUp" component={SignUpScreens} />
           <Stack.Screen name="Clients" component={ClientsScreen} />
