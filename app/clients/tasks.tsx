@@ -240,10 +240,10 @@ export default function TasksScreen() {
     }
   };
 
-  const showTaskDialog = () => {
+  const showTaskDialog = (selectedDetailTask : Task) => {
     Alert.alert(
       "Check Task Details",
-      `Type: ${selectedTask?.type}\nDate: ${selectedTask?.datetime}`,
+      `Type: ${selectedDetailTask?.type}\nDate: ${selectedDetailTask?.datetime}`,
       [
         {
           text: "Send Notification",
@@ -252,11 +252,11 @@ export default function TasksScreen() {
             Notifications.scheduleNotificationAsync({
               content: {
                 title: selectedTask?.type,
-                body: `Reminder for ${selectedTask?.clientName} at ${selectedTask?.datetime}`,
-                data: { taskId: selectedTask.id },
+                body: `Reminder for ${selectedDetailTask?.clientName} at ${selectedDetailTask?.datetime}`,
+                data: { taskId: selectedDetailTask.id },
               },
               trigger: {
-                date: selectedTask?.datetime,
+                date: selectedDetailTask?.datetime,
                 channelId: "tasks",
               },
             });
@@ -271,7 +271,7 @@ export default function TasksScreen() {
           text: "Open Task Details",
           onPress: async () => {
 
-            router.push(`/clients/taskDetails?taskId=${selectedTask.id}`);
+            router.push(`/clients/taskDetails?taskId=${selectedDetailTask.id}`);
           }
         },
       ]
@@ -334,7 +334,7 @@ export default function TasksScreen() {
                   onPress={() => {
                     console.log("selected task", task);
                     setSelectedTask(task);
-                    showTaskDialog();
+                    showTaskDialog(task);
                   }}
                 > <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 15 }}>Check</Text>
                 </Button>
