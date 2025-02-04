@@ -91,6 +91,18 @@ export default function ClientsScreen() {
     setVisible(true);
   };
 
+  const updateClientStatus = (status: number) => {
+    const updatedClients = clients.map((client) => {
+      if (client.client_id === selectedClient?.client_id) {
+        return { ...client, status };
+      }
+      return client;
+    });
+
+    setClients(updatedClients);
+    setCustomerData(updatedClients);
+  }
+
   const handleSwipe = ({ nativeEvent }: { nativeEvent: any }) => {
     if (nativeEvent.state === State.END) {
       const { translationX } = nativeEvent;
@@ -102,7 +114,7 @@ export default function ClientsScreen() {
       } else if (translationX > 50 && currentIndex > 0) {
         setSelectedClient(clients[currentIndex - 1]);
       }
-    } 
+    }
   };
 
   const getStatusColor = (status: number) => {
@@ -122,7 +134,7 @@ export default function ClientsScreen() {
     // Clear any stored data
     setCustomerData([]);
     setStatuses([]);
-    
+
     // Navigate back to the login screen
     navigation.navigate('Login');
   };
@@ -239,16 +251,18 @@ export default function ClientsScreen() {
                           {STATUS_OPTIONS.map((option: any) => (
                             <TouchableRipple
                               key={option.value}
-                              onPress={() =>
+                              onPress={() => {
                                 setSelectedClient({
                                   ...selectedClient,
                                   status: option.value,
-                                })
+                                });
+                                updateClientStatus(option.value)
+                              }
                               }
                               style={[
                                 styles.statusButton,
                                 selectedClient.status === option.value &&
-                                  styles.statusButtonActive,
+                                styles.statusButtonActive,
                               ]}
                             >
                               <View style={styles.statusOption}>
@@ -256,7 +270,7 @@ export default function ClientsScreen() {
                                   style={[
                                     styles.statusText,
                                     selectedClient.status === option.value &&
-                                      styles.statusTextActive,
+                                    styles.statusTextActive,
                                   ]}
                                 >
                                   {option.label}
