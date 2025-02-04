@@ -170,69 +170,74 @@ export default function TasksScreen() {
       Alert.alert("Validation Error", "Time is required.");
       return;
     }
-
-    // set timezone from PST to UTC
-    let datetime = date;
-    // we are in PST timezone
-    datetime.setHours(parseInt(inputTimeHrs));
-    datetime.setMinutes(parseInt(inputTimeMins));
-    datetime.setSeconds(0);
-    console.log(datetime);
-    let dateTimeString = datetime.toISOString();
-    // convert to year-month-day hour:minute:second
-    dateTimeString = dateTimeString.slice(0, 19).replace("T", " ");
-    if (isNaN(datetime.getTime())) {
-      Alert.alert("Invalid Date/Time", "Please enter a valid date and time.");
-      alert("Please enter a valid date and time.");
-      return;
-    }
-    // if (datetime.getTime() <= Date.now()) {
-    //   Alert.alert("Invalid Date/Time", "Please select a future date and time.");
-    //   alert("Please select a future date and time.");
-    //   return;
-    // }
-    const reminderData = {
-      client_id: newTask.clientId,
-      task_type: newTask.type,
-      reminder_datetime: dateTimeString,
-      is_repetitive: newTask.recurring,
-      repeat_pattern: newTask.recurring ? newTask.repeatPattern : null,
-      is_enabled: true,
-    };
     try {
-      const response = await fetch(
-        "https://sheng.up.railway.app/api/reminders",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(reminderData),
-        }
-      );
-      if (response.ok) {
-        const result = await response.json();
-        Alert.alert("Success", "Task added to the database.");
-        scheduleNotification({
-          id: result.reminder_id.toString(),
-          type: newTask.type,
-          datetime: datetime,
-          clientId: newTask.clientId as string,
-          clientName: newTask.clientName as string,
-          recurring: newTask.recurring as boolean,
-          repeatPattern: newTask.recurring ? newTask.repeatPattern : null,
-          recurringDays: newTask.recurringDays as boolean[],
-          enabled: true,
-        } as Task);
-      } else {
-        const error = await response.json();
-        Alert.alert("Error", error.error || "Failed to add task.");
+      // set timezone from PST to UTC
+      let datetime = new Date(date as Date);
+      console.log(datetime);
+      // we are in PST timezone
+      datetime.setHours(parseInt(inputTimeHrs));
+      datetime.setMinutes(parseInt(inputTimeMins));
+      datetime.setSeconds(0);
+      console.log(datetime);
+      let dateTimeString = datetime.toISOString();
+      // convert to year-month-day hour:minute:second
+      dateTimeString = dateTimeString.slice(0, 19).replace("T", " ");
+      if (isNaN(datetime.getTime())) {
+        Alert.alert("Invalid Date/Time", "Please enter a valid date and time.");
+        alert("Please enter a valid date and time.");
+        return;
       }
+      // if (datetime.getTime() <= Date.now()) {
+      //   Alert.alert("Invalid Date/Time", "Please select a future date and time.");
+      //   alert("Please select a future date and time.");
+      //   return;
+      // }
+      const reminderData = {
+        client_id: newTask.clientId,
+        task_type: newTask.type,
+        reminder_datetime: dateTimeString,
+        is_repetitive: newTask.recurring,
+        repeat_pattern: newTask.recurring ? newTask.repeatPattern : null,
+        is_enabled: true,
+      };
+      console.log(reminderData);
+      try {
+        const response = await fetch(
+          "https://sheng.up.railway.app/api/reminders",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(reminderData),
+          }
+        );
+        if (response.ok) {
+          const result = await response.json();
+          Alert.alert("Success", "Task added to the database.");
+          scheduleNotification({
+            id: result.reminder_id.toString(),
+            type: newTask.type,
+            datetime: datetime,
+            clientId: newTask.clientId as string,
+            clientName: newTask.clientName as string,
+            recurring: newTask.recurring as boolean,
+            repeatPattern: newTask.recurring ? newTask.repeatPattern : null,
+            recurringDays: newTask.recurringDays as boolean[],
+            enabled: true,
+          } as Task);
+        } else {
+          const error = await response.json();
+          Alert.alert("Error", error.error || "Failed to add task.");
+        }
+      } catch (error) {
+        Alert.alert("Error", "An unexpected error occurred.");
+      }
+      setIsAddTaskVisible(false);
+      fetchTasks();
     } catch (error) {
-      Alert.alert("Error", "An unexpected error occurred.");
+      console.error("Error fetching task details:", error);
     }
-    setIsAddTaskVisible(false);
-    fetchTasks();
   };
 
   const showTaskDialog = () => {
@@ -273,6 +278,45 @@ export default function TasksScreen() {
     );
   };
 
+  const showTaskDeleteDialog = (toDeleteTask: Task) => {
+    console.log("Deleting task", toDeleteTask);
+    Alert.alert(
+      "Delete Task",
+      `Are you sure you want to delete this task?`,
+      [
+        {
+          text: "Cancel",
+          onPress: () => { },
+          style: "cancel",
+        },
+        {
+          text: "Delete",
+          onPress: async () => {
+            try {
+              const response = await fetch(
+                `https://sheng.up.railway.app/api/reminders/${toDeleteTask.id}`,
+                {
+                  method: "DELETE",
+                }
+              );
+              setTimeout(() => {
+              }, 2000);
+              if (response.ok) {
+                Alert.alert("Success", "Task deleted from the database.");
+                fetchTasks();
+              } else {
+                const error = await response.json();
+                Alert.alert("Error", error.error || "Failed to delete task.");
+              }
+            } catch (error) {
+              // Alert.alert("Error", "An unexpected error occurred.");
+            }
+          },
+        },
+      ]
+    );
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.header}>Tasks for {clientName}</Text>
@@ -286,6 +330,14 @@ export default function TasksScreen() {
               description={task.datetime.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' })}
               descriptionStyle={{ color: "#333" }}
               right={() => (<View style={{ width: 'auto', display: 'flex', flexDirection: 'row' }}>
+                <Button style={{ backgroundColor: 'green', borderRadius: 5, padding: 0, marginHorizontal: 5 }}
+                  onPress={() => {
+                    console.log("selected task", task);
+                    setSelectedTask(task);
+                    showTaskDialog();
+                  }}
+                > <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 15 }}>Check</Text>
+                </Button>
                 <Checkbox
                   status={task.enabled ? "checked" : "unchecked"}
                   onPress={() => {
@@ -313,18 +365,13 @@ export default function TasksScreen() {
                   style={{ backgroundColor: 'red', borderRadius: 5, padding: 0, marginHorizontal: 5 }}
                   onPress={() => {
                     setSelectedTask(task);
-                    showTaskDialog();
+                    showTaskDeleteDialog(task);
                   }}
                 >
                   <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 15 }}>Delete</Text>
                 </Button>
               </View>
               )}
-
-              onPress={async () => {
-                setSelectedTask(task);
-                showTaskDialog();
-              }}
             />
           ))}
         </List.Section>

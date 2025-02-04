@@ -19,25 +19,25 @@ export default function TaskDetailsScreen({ navigation }: { navigation: Navigati
   useEffect(() => {
     console.log("Task ID:", taskId);
     console.log(route.params);
-    // fetchTaskDetails(taskId);
+    fetchTaskDetails(taskId);
   }, [taskId]);
 
-  // const fetchTaskDetails = async (taskId: string) => {
-  //   fetch(`https://sheng.up.railway.app/api/reminders/${task.id}`, {
-  //     method: "GET",
-  //     headers: {
-  //       "Content-Type": "application/json",
-  //     },
-  //   })
-  //     .then((response) => response.json())
-  //     .then((data) => {
-  //       console.log("Task Details:", data);
-  //       setTask(data.reminder);
-  //     })
-  //     .catch((error) => {
-  //       console.error("Error fetching task details:", error);
-  //     });
-  // };
+  const fetchTaskDetails = async (taskId: string) => {
+    fetch(`https://sheng.up.railway.app/api/reminders/${taskId}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        console.log("Task Details:", data);
+        setTask(data.reminder);
+      })
+      .catch((error) => {
+        console.error("Error fetching task details:", error);
+      });
+  };
   return (
     <View style={styles.container} >
       <Text style={styles.header}>Task Details</Text>
