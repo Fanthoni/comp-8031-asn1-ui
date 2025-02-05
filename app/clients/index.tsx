@@ -67,7 +67,7 @@ export default function ClientsScreen() {
   };
 
   useEffect(() => {
-    console.log("Customer Data", customerData);
+    // console.log("Customer Data", customerData);
     setClients([...customerData]);
   }, [customerData]);
 
@@ -101,7 +101,7 @@ export default function ClientsScreen() {
 
     setClients(updatedClients);
     setCustomerData(updatedClients);
-  }
+  };
 
   const handleSwipe = ({ nativeEvent }: { nativeEvent: any }) => {
     if (nativeEvent.state === State.END) {

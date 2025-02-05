@@ -264,15 +264,14 @@ export default function TasksScreen() {
         },
         {
           text: "Cancel",
-          onPress: () => { },
+          onPress: () => {},
           style: "cancel",
         },
         {
           text: "Open Task Details",
           onPress: async () => {
-
             router.push(`/clients/taskDetails?taskId=${selectedDetailTask.id}`);
-          }
+          },
         },
       ]
     );

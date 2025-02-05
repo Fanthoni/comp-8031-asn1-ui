@@ -20,7 +20,7 @@ function LoginScreen({ navigation }) {
         "https://sheng.up.railway.app/api/client_statuses",
       ];
       const responses = await Promise.all(apiUrls.map((url) => axios.get(url)));
-      console.log("Fetched Data:", responses);
+      // console.log("Fetched Data:", responses);
       const [clientsData, statusesData, clientStatusesData] = responses.map(
         (res) => res.data
       );

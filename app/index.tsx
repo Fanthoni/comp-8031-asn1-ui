@@ -11,6 +11,7 @@ import ClientsScreen from "./clients/index";
 import * as Notifications from 'expo-notifications';
 import TaskDetailsScreen from "./clients/taskDetails";
 import { Link, router } from "expo-router";
+import { useNavigation } from "@react-navigation/native";
 
 const createStackNavigator = createNativeStackNavigator;
 
@@ -19,9 +20,9 @@ const Stack = createStackNavigator();
 function LoginScreen({ navigation }: { navigation: any }) {
   const { control, handleSubmit } = useForm({
     defaultValues: {
-      email: '',
-      password: ''
-    }
+      email: "",
+      password: "",
+    },
   });
   const [loading, setLoading] = useState(false);
   const { setCustomerData, setStatuses } = useGlobalState();
@@ -36,7 +37,7 @@ function LoginScreen({ navigation }: { navigation: any }) {
         "https://sheng.up.railway.app/api/client_statuses",
       ];
       const responses = await Promise.all(apiUrls.map((url) => axios.get(url)));
-      console.log("Fetched Data:", responses);
+      // console.log("Fetched Data:", responses);
       const [clientsData, statusesData, clientStatusesData] = responses.map(
         (res) => res.data
       );
@@ -106,7 +107,7 @@ function LoginScreen({ navigation }: { navigation: any }) {
       </Button>
       <Button
         mode="text"
-        onPress={() => navigation.navigate('SignUp')}
+        onPress={() => navigation.navigate("SignUp")}
         style={styles.link}
       >
         Sign Up
@@ -122,11 +123,11 @@ function SignUpScreen({ navigation }: { navigation: any }) {
   const onSignUp = async (data) => {
     setLoading(true);
     try {
-      await axios.post('https://sheng.up.railway.app/api/users', {
+      await axios.post("https://sheng.up.railway.app/api/users", {
         username: data.email,
         password_hash: data.password,
       });
-      navigation.navigate('Login');
+      navigation.navigate("Login");
     } catch (error) {
       console.error(error);
     }
@@ -181,7 +182,7 @@ function SignUpScreen({ navigation }: { navigation: any }) {
       </Button>
       <Button
         mode="text"
-        onPress={() => navigation.navigate('Login')}
+        onPress={() => navigation.navigate("Login")}
         style={styles.link}
       >
         Login
@@ -192,6 +193,7 @@ function SignUpScreen({ navigation }: { navigation: any }) {
 
 Notifications.setNotificationHandler({
   handleNotification: async () => {
+    console.log("Notification Received");
     return {
       shouldShowAlert: true,
       shouldPlaySound: true,
@@ -201,43 +203,47 @@ Notifications.setNotificationHandler({
 });
 
 async function registerForPushNotificationsAsync() {
-  if (Platform.OS === 'android') {
-    Notifications.setNotificationChannelAsync('tasks', {
-      name: 'tasks',
+  if (Platform.OS === "android") {
+    Notifications.setNotificationChannelAsync("tasks", {
+      name: "tasks",
       importance: Notifications.AndroidImportance.MAX,
       vibrationPattern: [0, 250, 250, 250],
-      lightColor: '#FF231F7C',
-
+      lightColor: "#FF231F7C",
     });
   }
 }
 
-
 export default function App() {
   const navigationRef = useRef(null);
+  const navigation = useNavigation();
 
   useEffect(() => {
-    // const fetchData = async () => {
-    //   await Notifications.requestPermissionsAsync();
-    //   await registerForPushNotificationsAsync();
-    //   const subscription = Notifications.addNotificationResponseReceivedListener(response => {
-    //     const data = response.notification.request.content.data;
-    //     if (data.taskId) {
-    //       router.push(`/clients/taskDetails?taskId=${data.taskId}`);
-    //     }
-    //   });
-    //   return () => subscription.remove();
-    // };
-    // fetchData();
-  }, []);
+    const fetchData = async () => {
+      await Notifications.requestPermissionsAsync();
+      await registerForPushNotificationsAsync();
+      const subscription =
+        Notifications.addNotificationResponseReceivedListener((response) => {
+          const data = response.notification.request.content.data;
+          console.log("Notification Data:", data);
+          if (data.taskId) {
+            console.log("Task ID:", data.taskId);
+            router.push(`/clients/taskDetails?taskId=${data.taskId}`);
+            // router.back();
+          }
+        });
+      return () => subscription.remove();
+    };
+    fetchData();
+    console.log("App Mounted");
+  }, [navigation]);
 
   return (
     <GlobalStateProvider>
-        <Stack.Navigator initialRouteName="Login">
-          <Stack.Screen name="Login" component={LoginScreens} />
-          <Stack.Screen name="SignUp" component={SignUpScreens} />
-          <Stack.Screen name="Clients" component={ClientsScreen} />
-        </Stack.Navigator>
+      <Stack.Navigator initialRouteName="Login">
+        <Stack.Screen name="Login" component={LoginScreens} />
+        <Stack.Screen name="SignUp" component={SignUpScreens} />
+        <Stack.Screen name="Clients" component={ClientsScreen} />
+      </Stack.Navigator>
     </GlobalStateProvider>
   );
 }
