@@ -7,6 +7,7 @@ import {
   Image,
   TextInput,
   TouchableOpacity,
+  ToastAndroid,
 } from "react-native";
 import {
   Button,
@@ -23,6 +24,7 @@ import {
 } from "react-native-gesture-handler";
 import { Link, useNavigation, useRouter } from "expo-router";
 import { useGlobalState } from "../GlobalStateContext";
+import { makeHttpGetRequest } from "../TcpRequest";
 
 export default function ClientsScreen() {
   const [sortOption, setSortOption] = useState("");
@@ -137,6 +139,44 @@ export default function ClientsScreen() {
 
     // Navigate back to the login screen
     navigation.navigate('Login');
+  };
+
+  const testWebSocketFeature = () => {
+    const ws = new WebSocket("wss://echo.websocket.org");
+
+    ws.onopen = () => {
+      console.log("WebSocket connected");
+      ToastAndroid.show("WebSocket connected", ToastAndroid.SHORT);
+      ws.send("Hello WebSocket");
+    };
+
+    ws.onmessage = (e) => {
+      console.log("WebSocket message received:", e.data);
+      ToastAndroid.show(`WebSocket message received: ${e.data}`, ToastAndroid.SHORT);
+      ws.close();
+    };
+
+    ws.onerror = (e) => {
+      console.error("WebSocket error:", (e as ErrorEvent).
+      message);
+      ToastAndroid.show(`WebSocket error: ${(e as ErrorEvent).message}`, ToastAndroid.SHORT);
+    };
+
+    ws.onclose = (e) => {
+      console.log("WebSocket closed");
+      ToastAndroid.show("WebSocket closed", ToastAndroid.SHORT);
+    };
+  };
+
+  const testTcpRequest = async () => {
+    console.log("Making TCP Request...");
+    const response = await makeHttpGetRequest(
+      "sheng.up.railway.app",
+      443,
+      "/api/clients"
+    );
+    console.log("TCP Request Response:", response);
+    ToastAndroid.show(`TCP Request Response: ${response.body}`, ToastAndroid.SHORT);
   };
 
   return (
@@ -256,13 +296,12 @@ export default function ClientsScreen() {
                                   ...selectedClient,
                                   status: option.value,
                                 });
-                                updateClientStatus(option.value)
-                              }
-                              }
+                                updateClientStatus(option.value);
+                              }}
                               style={[
                                 styles.statusButton,
                                 selectedClient.status === option.value &&
-                                styles.statusButtonActive,
+                                  styles.statusButtonActive,
                               ]}
                             >
                               <View style={styles.statusOption}>
@@ -270,7 +309,7 @@ export default function ClientsScreen() {
                                   style={[
                                     styles.statusText,
                                     selectedClient.status === option.value &&
-                                    styles.statusTextActive,
+                                      styles.statusTextActive,
                                   ]}
                                 >
                                   {option.label}
@@ -296,6 +335,20 @@ export default function ClientsScreen() {
           </Dialog>
         </Portal>
 
+        <Button
+          mode="contained"
+          onPress={testWebSocketFeature}
+          style={{ marginBottom: 16 }}
+        >
+          Test Web Socket
+        </Button>
+        <Button
+          mode="contained"
+          onPress={testTcpRequest}
+          style={{ marginBottom: 16 }}
+        >
+          Test TCP Request
+        </Button>
         <Link href="/" asChild>
           <Button mode="contained" style={styles.button} onPress={handleLogout}>
             Logout
